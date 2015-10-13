@@ -4,14 +4,10 @@ import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.pellcorp.proxy.cmd.ProxyServerOptions;
 
 public class ProxyServer {
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-    
     private final ProxyServerOptions config;
     private Server jettyServer;
     
@@ -30,7 +26,7 @@ public class ProxyServer {
         sslContextFactory.setKeyStorePath(config.getKeystore().getFile().getAbsolutePath());
         sslContextFactory.setKeyStorePassword(config.getKeystore().getPassword());
         
-        if (config.isProxyMASSL()) {
+        if (config.isClientMASSL()) {
             sslContextFactory.setTrustStore(config.getTrustStore().getFile().getAbsolutePath());
             sslContextFactory.setTrustStorePassword(config.getTrustStore().getPassword());
             sslContextFactory.setNeedClientAuth(true);

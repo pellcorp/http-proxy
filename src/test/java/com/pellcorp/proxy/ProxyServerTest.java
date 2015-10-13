@@ -28,8 +28,8 @@ public class ProxyServerTest {
                 "src/test/resources/truststore.jks",
                 "-clientKeyStore",
                 "src/test/resources/client-keystore.jks",
-                "-enableProxyMASSL",
-                "-enableTargetMASSL",
+                "-enableClientMASSL",
+                "-enableServerMASSL",
         };
         ProxyServerCmd.main(args);
     }
