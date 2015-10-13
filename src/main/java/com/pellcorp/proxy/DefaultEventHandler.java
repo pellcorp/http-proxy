@@ -15,12 +15,11 @@ import org.apache.http.entity.ContentType;
 public class DefaultEventHandler implements EventHandler {
     @Override
     public void handle(Event event) {
-       System.out.println("------------------------ Event " + event.getEventId() + " ------------------------");
-       System.out.println("------------------------ Request Headers ------------------------");
+       System.out.println("------------------------ Request (" + event.getEventId() + ") ------------------------");
        handleHeaders(event.getRequest());
        System.out.println(prettyPrintXml(event.getRequest()));
        
-       System.out.println("------------------------ Response Headers ------------------------");
+       System.out.println("------------------------ Response (" + event.getEventId() + ") ------------------------");
        handleHeaders(event.getResponse());
        System.out.println(prettyPrintXml(event.getResponse()));
     }

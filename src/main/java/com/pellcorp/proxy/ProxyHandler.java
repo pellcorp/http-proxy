@@ -20,11 +20,10 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.eclipse.jetty.server.Request;
@@ -41,13 +40,16 @@ public class ProxyHandler extends AbstractHandler {
     private final EventHandler handler;
     private final URI target;
     private final Keystore trustStore;
+    private final Keystore keyStore;
     
-    public ProxyHandler(URI target, Keystore trustStore, final EventHandler handler) {
+    public ProxyHandler(URI target, Keystore trustStore, final Keystore keyStore, final EventHandler handler) {
         this.target = target;
         this.trustStore = trustStore;
+        this.keyStore = keyStore;
         this.handler = handler;
     }
     
+    @SuppressWarnings("unchecked")
     @Override
     public void handle(String ctx, Request request, HttpServletRequest httpServletRequest,
             HttpServletResponse response) throws IOException, ServletException {
@@ -60,11 +62,16 @@ public class ProxyHandler extends AbstractHandler {
                     builder.addParameter(name, request.getParameter(name));
                 }
                 HttpGet httpGet = new HttpGet(builder.build());
-                ContentType type = ContentType.parse(request.getContentType());
+                ContentType type = null;
+                if (request.getContentType() != null) {
+                    type = ContentType.parse(request.getContentType());
+                } else {
+                    type = ContentType.TEXT_HTML;
+                }
                 long messageId = messageIdProvider.incrementAndGet();
                 Event event = new Event(messageId, requestUrl, Method.GET);
                 event.getRequest().setContentType(type);
-                
+                event.getRequest().setBuffer(new byte[]{});
                 copyHeaders(event.getRequest(), request, httpGet);
                 
                 CloseableHttpClient client = createClient();
@@ -105,17 +112,17 @@ public class ProxyHandler extends AbstractHandler {
         }
     }
     
+    @SuppressWarnings("unchecked")
     private void copyHeaders(Content content, Request request, HttpMessage httpMessage) {
         for (String name : IterableEnumeration.iterable((Enumeration<String>)request.getHeaderNames())) {
+            Header header = new BasicHeader(name, request.getHeader(name));
+            content.getHeaders().add(header);
+            
             if (name.equalsIgnoreCase("content-length")) {
                 continue;
             }
-            
-            if (!httpMessage.containsHeader(name)) {
-                Header header = new BasicHeader(name, request.getHeader(name));
-                httpMessage.setHeader(header);
-                content.getHeaders().add(header);
-            }
+
+            httpMessage.setHeader(header);
         }
     }
     
@@ -123,9 +130,8 @@ public class ProxyHandler extends AbstractHandler {
             CloseableHttpResponse httpResponse) throws IOException {
         try {
             for (Header header : httpResponse.getAllHeaders()) {
-                if (!response.containsHeader(header.getName())) {
-                    response.setHeader(header.getName(), header.getValue());
-                }
+                response.setHeader(header.getName(), header.getValue());
+                event.getResponse().getHeaders().add(header);
             }
             
             HttpEntity entity = httpResponse.getEntity();
@@ -147,20 +153,25 @@ public class ProxyHandler extends AbstractHandler {
 
     private CloseableHttpClient createClient() throws IOException {
         try {
-            SSLContext sslcontext = new SSLContextBuilder().loadTrustMaterial(
-                    trustStore.getFile(), 
-                    trustStore.getPassword().toCharArray(),
-                         new TrustSelfSignedStrategy())
-                 .build();
+            SSLContextBuilder contextBuilder = SSLContextBuilder.create();
+            contextBuilder.loadTrustMaterial(trustStore.getFile(), trustStore.getPasswordChars());
+            
+            if (keyStore != null) {
+                contextBuilder.loadKeyMaterial(keyStore.getFile(), keyStore.getPasswordChars(), keyStore.getPasswordChars());
+            }
          
-         SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+            SSLContext sslcontext = contextBuilder.build();
+            
+            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
                  sslcontext,
                  new String[] { "TLSv1" },
                  null,
                  SSLConnectionSocketFactory.getDefaultHostnameVerifier());
          
-         CloseableHttpClient httpclient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
-         return httpclient;
+             CloseableHttpClient httpclient = HttpClientBuilder.create()
+                 .disableContentCompression()
+                 .setSSLSocketFactory(sslsf).build();
+             return httpclient;
         } catch (Throwable e) {
             logger.error("Failed", e);
             throw new IOException(e);

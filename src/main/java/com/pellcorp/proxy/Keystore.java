@@ -18,4 +18,8 @@ public class Keystore {
     public String getPassword() {
         return password;
     }
+    
+    public char[] getPasswordChars() {
+        return password.toCharArray();
+    }
 }

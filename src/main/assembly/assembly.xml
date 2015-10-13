@@ -1,0 +1,37 @@
+<assembly>
+	<id>dist</id>
+	<formats>
+		<format>tar.gz</format>
+	</formats>
+
+	<includeBaseDirectory>true</includeBaseDirectory>
+	<baseDirectory>${project.artifactId}</baseDirectory>
+
+	<dependencySets>
+		<dependencySet>
+			<scope>runtime</scope>
+			<outputDirectory>lib</outputDirectory>
+		</dependencySet>
+	</dependencySets>
+	
+	<fileSets>
+		<fileSet>
+			<directory>src/main/resources/scripts</directory>
+			<outputDirectory>/</outputDirectory>
+			<fileMode>0777</fileMode>
+
+			<includes>
+				<include>*.sh</include>
+				<include>*.bat</include>
+			</includes>
+		</fileSet>
+		
+		<fileSet>
+			<directory>src/main/resources/</directory>
+			<outputDirectory>/</outputDirectory>
+			<includes>
+				<include>log4j.properties</include>
+			</includes>
+		</fileSet>
+	</fileSets>
+</assembly>
