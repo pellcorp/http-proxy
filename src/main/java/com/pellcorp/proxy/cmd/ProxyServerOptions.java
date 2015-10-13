@@ -23,29 +23,39 @@ public class ProxyServerOptions {
 	@Option(name = "-target", usage = "Target URI", required = true, handler=URIOptionHandler.class)
     private URI target;
 	
-	@Option(name = "-trustStore", usage = "Trust Store", required = false)
-	private File trustStore;
-	
-	@Option(name = "-trustStorePass", usage = "Trust Store Password", required = false)
-    private String trustStorePass;
-	
-	@Option(name = "-keyStore", usage = "Trust Store", required = false)
+	@Option(name = "-keyStore", usage = "Proxy Keystore", required = false)
     private File keyStore;
-	
-	@Option(name = "-keyStorePass", usage = "Keystore Password", required = false)
-    private String keyStorePass;
-	
-	@Option(name = "-clientKeyStore", usage = "Trust Store", required = false)
+    
+    @Option(name = "-keyPass", usage = "Proxy Keystore Password", required = false)
+    private String keyPass;
+    
+    @Option(name = "-trustStore", usage = "Truststore", required = false)
+    private File trustStore;
+    
+    @Option(name = "-trustPass", usage = "Truststore Password", required = false)
+    private String trustPass;
+    
+    @Option(name = "-clientKeyStore", usage = "Client Keystore", required = false)
     private File clientKeyStore;
+    
+    @Option(name = "-clientKeyPass", usage = "Client Keystore Password", required = false)
+    private String clientKeyPass;
+    
+    @Option(name = "-enableProxyMASSL", usage = "Enable Client to Proxy MA-SSL", required = false)
+    private boolean enableProxyMASSL; // requires keyStore and trustStore
+    
+    @Option(name = "-enableTargetMASSL", usage = "Enable Proxy to Target MA-SSL", required = false)
+    private boolean enableTargetMASSL; // requires clientKeystore and trustStore
 	
-	@Option(name = "-clientKeyStorePass", usage = "Client Keystore Password", required = false)
-    private String clientKeyStorePass;
-
 	public ProxyServerOptions(String[] args) {
 		parser = new CmdLineParser(this);
 
 		try {
 			parser.parseArgument(args);
+			
+			if (enableTargetMASSL && clientKeyStore == null) {
+			    throw new CmdLineException(parser, "Client Key store required to enable Target MA-SSL");
+			}
 		} catch (CmdLineException e) {
 			this.errorMessage = e.getMessage();
 			return;
@@ -76,31 +86,39 @@ public class ProxyServerOptions {
 	
 	public Keystore getKeystore() {
 	    if (keyStore != null) {
-	        return new Keystore(keyStore, getPassword(keyStorePass));
+	        return new Keystore(keyStore, getPassword(keyPass));
 	    } else {
 	        return null;
 	    }
 	}
-	
-	public Keystore getTrustStore() {
+
+    public Keystore getTrustStore() {
         if (trustStore != null) {
-            return new Keystore(trustStore, getPassword(trustStorePass));
+            return new Keystore(trustStore, getPassword(trustPass));
         } else {
             return null;
         }
     }
-	
-	public Keystore getClientKeyStore() {
-        if (clientKeyStore != null) {
-            return new Keystore(clientKeyStore, getPassword(clientKeyStorePass));
+    
+    public Keystore getClientKeystore() {
+        if (clientKeyStore != null && isTargetMASSL()) {
+            return new Keystore(clientKeyStore, getPassword(clientKeyPass));
         } else {
             return null;
         }
+    }
+
+    public boolean isProxyMASSL() {
+        return enableProxyMASSL;
+    }
+    
+    public boolean isTargetMASSL() {
+        return enableTargetMASSL;
     }
 	
 	private String getPassword(String value) {
 	    if (value == null) {
-	        value = keyStorePass;
+	        value = keyPass;
 	    }
 	    
 	    if (value == null) {

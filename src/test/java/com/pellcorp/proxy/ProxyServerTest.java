@@ -22,12 +22,14 @@ public class ProxyServerTest {
                 "https://localhost:8443",
                 "-target",
                 "https://localhost:9448",
-                "-trustStore",
-                "src/test/resources/truststore.jks",
                 "-keyStore",
                 "src/test/resources/keystore.jks",
+                "-trustStore",
+                "src/test/resources/truststore.jks",
                 "-clientKeyStore",
-                "src/test/resources/client-keystore.jks"
+                "src/test/resources/client-keystore.jks",
+                "-enableProxyMASSL",
+                "-enableTargetMASSL",
         };
         ProxyServerCmd.main(args);
     }

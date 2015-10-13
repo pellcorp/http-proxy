@@ -4,12 +4,18 @@ import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.pellcorp.proxy.cmd.ProxyServerOptions;
 
 public class ProxyServer {
-    private final ProxyServerConfig config;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+    
+    private final ProxyServerOptions config;
     private Server jettyServer;
     
-    public ProxyServer(ProxyServerConfig config) {
+    public ProxyServer(ProxyServerOptions config) {
         this.config = config;
     }
     
@@ -21,33 +27,20 @@ public class ProxyServer {
         jettyServer = new Server();
         
         SslContextFactory sslContextFactory = new SslContextFactory();
-        sslContextFactory.setKeyStorePath(config.getKeyStore().getFile().getAbsolutePath());
-        sslContextFactory.setKeyStorePassword(config.getKeyStore().getPassword());
+        sslContextFactory.setKeyStorePath(config.getKeystore().getFile().getAbsolutePath());
+        sslContextFactory.setKeyStorePassword(config.getKeystore().getPassword());
         
-        if (config.getTrustStore() != null) {
+        if (config.isProxyMASSL()) {
             sslContextFactory.setTrustStore(config.getTrustStore().getFile().getAbsolutePath());
             sslContextFactory.setTrustStorePassword(config.getTrustStore().getPassword());
             sslContextFactory.setNeedClientAuth(true);
         }
         
-        sslContextFactory.setIncludeProtocols("TLSv1");
-        sslContextFactory.setIncludeCipherSuites(
-                "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
-                "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
-                "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
-                "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
-                "TLS_ECDHE_RSA_WITH,_RC4_128_SHA",
-                "TLS_RSA_WITH_AES_128_CBC_SHA256",
-                "TLS_RSA_WITH_AES_128_CBC_SHA",
-                "TLS_RSA_WITH_AES_256_CBC_SHA256", 
-                "TLS_RSA_WITH_AES_256_CBC_SHA",
-                "SSL_RSA_WITH_RC4_128_SHA");
-        
         SslSelectChannelConnector sslConnector = new SslSelectChannelConnector(sslContextFactory);
-        sslConnector.setPort(config.getServer().getPort());
+        sslConnector.setPort(config.getProxy().getPort());
         jettyServer.setConnectors(new Connector[]{ sslConnector });
         ProxyHandler handler = new ProxyHandler(
-                config.getTarget(), config.getTrustStore(), config.getClientKeyStore(), eventHandler);
+                config.getTarget(), config.getClientKeystore(), config.getTrustStore(), eventHandler);
         jettyServer.setHandler(handler);
         jettyServer.start();
         jettyServer.join();

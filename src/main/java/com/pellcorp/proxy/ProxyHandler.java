@@ -42,7 +42,7 @@ public class ProxyHandler extends AbstractHandler {
     private final Keystore trustStore;
     private final Keystore keyStore;
     
-    public ProxyHandler(URI target, Keystore trustStore, final Keystore keyStore, final EventHandler handler) {
+    public ProxyHandler(URI target, Keystore keyStore, Keystore trustStore, EventHandler handler) {
         this.target = target;
         this.trustStore = trustStore;
         this.keyStore = keyStore;
