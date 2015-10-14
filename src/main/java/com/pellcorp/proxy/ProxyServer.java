@@ -1,5 +1,7 @@
 package com.pellcorp.proxy;
 
+import java.net.URI;
+
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
@@ -20,7 +22,7 @@ public class ProxyServer {
         jettyServer.stop();
     }
     
-    public void start(final EventHandler eventHandler) throws Exception {
+    public boolean start(final EventHandler eventHandler) throws Exception {
         jettyServer = new Server();
         
         if ("https".equals(config.getProxy().getScheme())) {
@@ -35,18 +37,37 @@ public class ProxyServer {
             }
             
             SslSelectChannelConnector sslConnector = new SslSelectChannelConnector(sslContextFactory);
-            sslConnector.setPort(config.getProxy().getPort());
+            sslConnector.setPort(getProxyPort());
             jettyServer.setConnectors(new Connector[]{ sslConnector });
         } else {
             SelectChannelConnector connector = new SelectChannelConnector();
-            connector.setPort(config.getProxy().getPort());
+            connector.setPort(getProxyPort());
             jettyServer.setConnectors(new Connector[]{ connector });
         }
         
         ProxyHandler handler = new ProxyHandler(
                 config.getTarget(), config.getClientKeystore(), config.getTrustStore(), eventHandler);
         jettyServer.setHandler(handler);
-        jettyServer.start();
-        jettyServer.join();
+        
+        try {
+            jettyServer.start();
+            jettyServer.join();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    private int getProxyPort() {
+        int port = config.getProxy().getPort();
+        if (port == -1) {
+            if ("https".equals(config.getProxy().getScheme())) {
+                return 443;
+            } else {
+                return 80;
+            }
+        } else {
+            return port;
+        }
     }
 }

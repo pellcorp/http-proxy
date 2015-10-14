@@ -8,7 +8,9 @@ public class ProxyServerCmd {
         ProxyServerOptions options = new ProxyServerOptions(args);
         if (options.isValid()) {
             final ProxyServer server = new ProxyServer(options);
-            server.start(new DefaultEventHandler());
+            if (!server.start(new DefaultEventHandler())) {
+                System.exit(1);
+            }
         } else {
             System.err.println("Error: " + options.getErrorMessage());
             System.err.println(options.getUsage());
