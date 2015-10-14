@@ -11,11 +11,12 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
-import org.apache.http.entity.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DefaultEventHandler implements EventHandler {
+    
+    
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Override
@@ -43,10 +44,9 @@ public class DefaultEventHandler implements EventHandler {
 
     private String prettyPrintXml(Content content) {
         try {
-            String xml = new String(content.getBuffer(), "UTF-8");
-            if (isXml(content.getContentType())) {
-                Transformer transformer = TransformerFactory.newInstance()
-                        .newTransformer();
+            if (ContentUtils.isXml(content.getContentType())) {
+                String xml = new String(content.getBuffer(), "UTF-8");
+                Transformer transformer = TransformerFactory.newInstance().newTransformer();
                 transformer.setOutputProperty(OutputKeys.INDENT, "yes");
                 transformer.setOutputProperty(
                         "{http://xml.apache.org/xslt}indent-amount", "2");
@@ -57,9 +57,11 @@ public class DefaultEventHandler implements EventHandler {
                 transformer.transform(source, result);
                 String xmlString = result.getWriter().toString();
                 return xmlString.trim();
-
+            } else if (ContentUtils.isMtom(content.getContentType())) {
+                // FIXME - would be good to get a parser of multipart/related
+                return new String(content.getBuffer(), "UTF-8");
             } else {
-                return xml;
+                return new String(content.getBuffer(), "UTF-8");
             }
         } catch (Exception e) {
             logger.error("", e);
@@ -67,7 +69,5 @@ public class DefaultEventHandler implements EventHandler {
         }
     }
 
-    private boolean isXml(ContentType type) {
-        return type.getMimeType().equals(ContentType.TEXT_XML.getMimeType());
-    }
+    
 }
