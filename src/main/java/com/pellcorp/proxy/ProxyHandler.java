@@ -134,18 +134,27 @@ public class ProxyHandler extends AbstractHandler {
                 event.getResponse().getHeaders().add(header);
             }
             
+            int statusCode = httpResponse.getStatusLine().getStatusCode();
+            event.setStatus(statusCode);
+            response.setStatus(statusCode);
+            
             HttpEntity entity = httpResponse.getEntity();
-            ByteArrayInputStream is = new ByteArrayInputStream(entity.getContent());
+            if (entity != null) {
+                ByteArrayInputStream is = new ByteArrayInputStream(entity.getContent());
+                event.getResponse().setBuffer(is.getBuffer());
+                OutputStream out = response.getOutputStream();
+                IOUtils.copy(is, out);
+                out.close();
+            } else {
+                event.getResponse().setBuffer(new byte[]{});
+            }
             
-            ContentType type = ContentType.parse(response.getContentType());
-            event.getResponse().setContentType(type);
-            event.getResponse().setBuffer(is.getBuffer());
-            
-            OutputStream out = response.getOutputStream();
-            IOUtils.copy(is, out);
-            out.close();
-            out.close();
-            
+            if (response.getContentType() != null) {
+                ContentType type = ContentType.parse(response.getContentType());
+                event.getResponse().setContentType(type);
+            } else {
+                event.getResponse().setContentType(ContentType.TEXT_HTML);
+            }
         } finally {
             httpResponse.close();
         }
@@ -153,25 +162,28 @@ public class ProxyHandler extends AbstractHandler {
 
     private CloseableHttpClient createClient() throws IOException {
         try {
-            SSLContextBuilder contextBuilder = SSLContextBuilder.create();
-            contextBuilder.loadTrustMaterial(trustStore.getFile(), trustStore.getPasswordChars());
+            HttpClientBuilder builder = HttpClientBuilder.create()
+                    .disableContentCompression();
             
-            if (keyStore != null) {
-                contextBuilder.loadKeyMaterial(keyStore.getFile(), keyStore.getPasswordChars(), keyStore.getPasswordChars());
+            if ("https".equals(target.getScheme())) {
+                SSLContextBuilder contextBuilder = SSLContextBuilder.create();
+                contextBuilder.loadTrustMaterial(trustStore.getFile(), trustStore.getPasswordChars());
+                
+                if (keyStore != null) {
+                    contextBuilder.loadKeyMaterial(keyStore.getFile(), keyStore.getPasswordChars(), keyStore.getPasswordChars());
+                }
+             
+                SSLContext sslcontext = contextBuilder.build();
+                
+                SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+                     sslcontext,
+                     new String[] { "TLSv1" },
+                     null,
+                     SSLConnectionSocketFactory.getDefaultHostnameVerifier());
+             
+                builder.setSSLSocketFactory(sslsf).build();
             }
-         
-            SSLContext sslcontext = contextBuilder.build();
-            
-            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
-                 sslcontext,
-                 new String[] { "TLSv1" },
-                 null,
-                 SSLConnectionSocketFactory.getDefaultHostnameVerifier());
-         
-             CloseableHttpClient httpclient = HttpClientBuilder.create()
-                 .disableContentCompression()
-                 .setSSLSocketFactory(sslsf).build();
-             return httpclient;
+            return builder.build();
         } catch (Throwable e) {
             logger.error("Failed", e);
             throw new IOException(e);

@@ -30,6 +30,8 @@ public class DefaultEventHandler implements EventHandler {
         builder.append(IOUtils.LINE_SEPARATOR);
         builder.append("------------------------ Response (Message ID: " + event.getEventId() + ") ------------------------");
         builder.append(IOUtils.LINE_SEPARATOR);
+        builder.append("Status: " + event.getStatus());
+        builder.append(IOUtils.LINE_SEPARATOR);
         handleHeaders(event.getResponse(), builder);
         builder.append(prettyPrintXml(event.getResponse()));
         logger.info(builder.toString());

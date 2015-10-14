@@ -56,6 +56,14 @@ public class ProxyServerOptions {
 			if (enableServerMASSL && clientKeyStore == null) {
 			    throw new CmdLineException(parser, "Client Key store required to enable Server MA-SSL");
 			}
+			
+			if ("https".equals(getProxy().getScheme()) && keyStore == null) {
+			    throw new CmdLineException(parser, "Key store required to configure a https proxy");
+			}
+			
+			if ("https".equals(getTarget().getScheme()) && trustStore == null) {
+                throw new CmdLineException(parser, "Trust store required to configure a https target");
+            }
 		} catch (CmdLineException e) {
 			this.errorMessage = e.getMessage();
 			return;

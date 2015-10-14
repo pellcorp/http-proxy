@@ -8,6 +8,7 @@ public class Event {
     }
     private final Long eventId;
     private final URI uri;
+    private int statusCode;
     private final Method method;
     private final Content request = new Content();
     private final Content response = new Content();
@@ -18,6 +19,14 @@ public class Event {
         this.method = method;
     }
 
+    public void setStatus(int statusCode) {
+        this.statusCode = statusCode;
+    }
+    
+    public int getStatus() {
+        return statusCode;
+    }
+    
     public Method getMethod() {
         return method;
     }
