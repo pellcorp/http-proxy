@@ -34,14 +34,27 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 				<version>2.4</version>
 				<executions>
 					<execution>
-						<id>make-assembly</id>
+						<id>windows</id>
 						<phase>package</phase>
 						<goals>
 							<goal>single</goal>
 						</goals>
 						<configuration>
 							<descriptors>
-								<descriptor>${basedir}/src/main/assembly/assembly.xml</descriptor>
+								<descriptor>${basedir}/src/main/assembly/assembly-windows.xml</descriptor>
+							</descriptors>
+						</configuration>
+					</execution>
+					
+					<execution>
+						<id>linux</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>${basedir}/src/main/assembly/assembly-linux.xml</descriptor>
 							</descriptors>
 						</configuration>
 					</execution>
