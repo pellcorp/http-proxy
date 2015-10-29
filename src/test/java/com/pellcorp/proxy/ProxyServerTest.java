@@ -6,9 +6,9 @@ public class ProxyServerTest {
     public static void main(String[] s) throws Exception {
         String[] args = new String[]{
                 "-proxy",
-                "http://localhost:8999",
+                "http://localhost:8080",
                 "-target",
-                "http://localhost",
+                "http://192.168.0.5:8080",
 //                "-keyStore",
 //                "src/test/resources/keystore.jks",
 //                "-trustStore",

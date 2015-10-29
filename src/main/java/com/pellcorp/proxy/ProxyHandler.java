@@ -57,6 +57,7 @@ public class ProxyHandler extends AbstractHandler {
             String method = request.getMethod();
             if (method.equalsIgnoreCase("GET")) {
                 URI requestUrl = new URI(target.toString() + ctx);
+                
                 URIBuilder builder = new URIBuilder(requestUrl);
                 for (String name : IterableEnumeration.iterable((Enumeration<String>) request.getParameterNames())) {
                     builder.addParameter(name, request.getParameter(name));
@@ -81,10 +82,9 @@ public class ProxyHandler extends AbstractHandler {
                 handler.handle(event);
                 request.setHandled(true);
             } else if (request.getMethod().equalsIgnoreCase("POST")) {
-                
                 URI requestUrl = new URI(target.toString() + ctx);
-                HttpPost httpPost = new HttpPost(requestUrl);
                 
+                HttpPost httpPost = new HttpPost(requestUrl);
                 ByteArrayInputStream is = new ByteArrayInputStream(request.getInputStream());
                 long messageId = messageIdProvider.incrementAndGet();
                 ContentType type = ContentType.parse(request.getContentType());

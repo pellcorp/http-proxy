@@ -15,8 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DefaultEventHandler implements EventHandler {
-    
-    
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Override
@@ -24,6 +22,8 @@ public class DefaultEventHandler implements EventHandler {
         StringBuilder builder = new StringBuilder();
         builder.append(IOUtils.LINE_SEPARATOR);
         builder.append("------------------------ Request (Message ID: " + event.getEventId() + ") ------------------------");
+        builder.append(IOUtils.LINE_SEPARATOR);
+        builder.append("URI: " + event.getUri());
         builder.append(IOUtils.LINE_SEPARATOR);
         handleHeaders(event.getRequest(), builder);
         builder.append(prettyPrintXml(event.getRequest()));
@@ -70,6 +70,4 @@ public class DefaultEventHandler implements EventHandler {
             return null;
         }
     }
-
-    
 }
